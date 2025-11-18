@@ -56,7 +56,7 @@ function WriteContent() {
       excerpt,
       coverImage,
       tags,
-      status: "draft",
+      status: "DRAFT",
     });
   };
 
@@ -71,7 +71,7 @@ function WriteContent() {
       excerpt,
       coverImage,
       tags,
-      status: "published",
+      status: "PUBLISHED",
     });
   };
 
