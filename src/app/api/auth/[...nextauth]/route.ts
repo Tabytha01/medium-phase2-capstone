@@ -11,11 +11,15 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.log("Missing credentials");
           return null;
         }
 
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/auth/login`, {
+          const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:4000";
+          console.log("Calling login API at:", `${baseUrl}/api/auth/login`);
+          
+          const res = await fetch(`${baseUrl}/api/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -24,11 +28,20 @@ export const authOptions: NextAuthOptions = {
             }),
           });
 
-          const user = await res.json();
+          console.log("Login API response status:", res.status);
+          const data = await res.json();
+          console.log("Login API response data:", data);
 
-          if (res.ok && user) {
-            return user;
+          if (res.ok && data.id) {
+            console.log("Authorization successful, returning user");
+            return {
+              id: data.id,
+              name: data.name,
+              email: data.email,
+            };
           }
+          
+          console.log("Authorization failed");
           return null;
         } catch (error) {
           console.error("Auth error:", error);
