@@ -1,14 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session, status } = useSession();
 
   const isActive = (path: string) => pathname === path;
+
+  const handleSignOut = async () => {
+    console.log("Sign out clicked");
+    await signOut({ redirect: false });
+    router.push("/");
+    router.refresh();
+  };
 
   return (
     <header className="border-b">
@@ -47,8 +55,8 @@ export default function Header() {
                   Profile
                 </Link>
                 <button
-                  onClick={() => signOut({ callbackUrl: "/" })}
-                  className="hover:text-gray-600"
+                  onClick={handleSignOut}
+                  className="hover:text-gray-600 cursor-pointer"
                 >
                   Sign Out
                 </button>
