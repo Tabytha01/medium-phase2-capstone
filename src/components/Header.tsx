@@ -12,7 +12,6 @@ export default function Header() {
   const isActive = (path: string) => pathname === path;
 
   const handleSignOut = async () => {
-    console.log("Sign out clicked");
     await signOut({ redirect: false });
     router.push("/");
     router.refresh();
