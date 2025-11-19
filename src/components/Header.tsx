@@ -18,7 +18,7 @@ export default function Header() {
   };
 
   return (
-    <header className="border-b">
+    <header className="border-b bg-[#1A3D63] text-white dark:bg-white dark:text-[#1A3D63]">
       <nav className="container mx-auto px-4 py-4 max-w-7xl">
         <div className="flex items-center justify-between">
           <Link href="/" className="text-2xl font-bold">
@@ -67,7 +67,7 @@ export default function Header() {
                 </Link>
                 <Link
                   href="/signup"
-                  className="bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-full hover:opacity-80"
+                  className="bg-[#1A3D63] dark:bg-white text-white dark:text-[#1A3D63] px-4 py-2 rounded-full hover:opacity-80"
                 >
                   Get Started
                 </Link>

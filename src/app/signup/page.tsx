@@ -42,7 +42,7 @@ export default function SignupPage() {
 
   return (
     <div className="max-w-md mx-auto">
-      <h1 className="text-4xl font-bold mb-8 text-center">Sign Up</h1>
+      <h1 className="text-4xl font-bold mb-8 text-center">Register</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {error && (
@@ -59,8 +59,8 @@ export default function SignupPage() {
             {...register("name")}
             type="text"
             id="name"
-            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-black dark:bg-gray-800 dark:border-gray-700"
-            placeholder="John Doe"
+            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-[#4A7FA7] dark:bg-gray-800 dark:border-gray-700"
+            placeholder="Your Name"
           />
           {errors.name && (
             <p className="text-red-600 text-sm mt-1">{errors.name.message}</p>
@@ -75,7 +75,7 @@ export default function SignupPage() {
             {...register("email")}
             type="email"
             id="email"
-            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-black dark:bg-gray-800 dark:border-gray-700"
+            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-[#4A7FA7] dark:bg-gray-800 dark:border-gray-700"
             placeholder="you@example.com"
           />
           {errors.email && (
@@ -91,8 +91,8 @@ export default function SignupPage() {
             {...register("password")}
             type="password"
             id="password"
-            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-black dark:bg-gray-800 dark:border-gray-700"
-            placeholder="••••••••"
+            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-[#4A7FA7] dark:bg-gray-800 dark:border-gray-700"
+            placeholder=""
           />
           {errors.password && (
             <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
@@ -107,8 +107,8 @@ export default function SignupPage() {
             {...register("confirmPassword")}
             type="password"
             id="confirmPassword"
-            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-black dark:bg-gray-800 dark:border-gray-700"
-            placeholder="••••••••"
+            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-[#4A7FA7] dark:bg-gray-800 dark:border-gray-700"
+            placeholder=""
           />
           {errors.confirmPassword && (
             <p className="text-red-600 text-sm mt-1">{errors.confirmPassword.message}</p>
@@ -118,7 +118,7 @@ export default function SignupPage() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-full font-medium hover:opacity-80 disabled:opacity-50"
+          className="w-full bg-[#4A7FA7] dark:bg-white text-white dark:text-[#4A7FA7] py-3 rounded-full font-medium hover:opacity-80 disabled:opacity-50"
         >
           {isLoading ? "Creating account..." : "Sign Up"}
         </button>
@@ -126,7 +126,7 @@ export default function SignupPage() {
 
       <p className="text-center mt-6 text-gray-600 dark:text-gray-400">
         Already have an account?{" "}
-        <Link href="/login" className="text-black dark:text-white font-medium hover:underline">
+        <Link href="/login" className="text-[#4A7FA7] dark:text-white font-medium hover:underline">
           Sign in
         </Link>
       </p>

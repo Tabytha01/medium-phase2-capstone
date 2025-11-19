@@ -47,7 +47,7 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto">
-      <h1 className="text-4xl font-bold mb-8 text-center">Sign In</h1>
+      <h1 className="text-4xl font-bold mb-8 text-[#0A1931]-center">Login</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {error && (
@@ -64,7 +64,7 @@ export default function LoginPage() {
             {...register("email")}
             type="email"
             id="email"
-            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-black dark:bg-gray-800 dark:border-gray-700"
+            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-[#4A7FA7] dark:bg-gray-800 dark:border-gray-700"
             placeholder="you@example.com"
           />
           {errors.email && (
@@ -80,7 +80,7 @@ export default function LoginPage() {
             {...register("password")}
             type="password"
             id="password"
-            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-black dark:bg-gray-800 dark:border-gray-700"
+            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-[#4A7FA7] dark:bg-gray-800 dark:border-gray-700"
             placeholder="••••••••"
           />
           {errors.password && (
@@ -91,7 +91,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-full font-medium hover:opacity-80 disabled:opacity-50"
+          className="w-full bg-[#4A7FA7] dark:bg-white text-white dark:text-[#4A7FA7] py-3 rounded-full font-medium hover:opacity-80 disabled:opacity-50"
         >
           {isLoading ? "Signing in..." : "Sign In"}
         </button>
@@ -99,7 +99,7 @@ export default function LoginPage() {
 
       <p className="text-center mt-6 text-gray-600 dark:text-gray-400">
         Don't have an account?{" "}
-        <Link href="/signup" className="text-black dark:text-white font-medium hover:underline">
+        <Link href="/signup" className="text-[#4A7FA7] dark:text-white font-medium hover:underline">
           Sign up
         </Link>
       </p>
