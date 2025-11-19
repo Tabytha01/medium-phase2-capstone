@@ -22,7 +22,7 @@ export default function Header() {
       <nav className="container mx-auto px-4 py-4 max-w-7xl">
         <div className="flex items-center justify-between">
           <Link href="/" className="text-2xl font-bold">
-            Medium Clone
+            Medium Blog
           </Link>
 
           <div className="flex items-center gap-6">
