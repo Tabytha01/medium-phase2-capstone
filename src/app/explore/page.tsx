@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ExplorePostCard from '@/components/ExplorePostCard';
 import { Post } from '@/types/post';
 
-export default function ExplorePage() {
+function ExploreContent() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -83,8 +83,6 @@ export default function ExplorePage() {
           </div>
         </form>
 
-
-
         {/* Results */}
         <div className="space-y-6">
           {loading ? (
@@ -106,5 +104,13 @@ export default function ExplorePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ExplorePage() {
+  return (
+    <Suspense fallback={<div className="text-center py-8">Loading...</div>}>
+      <ExploreContent />
+    </Suspense>
   );
 }

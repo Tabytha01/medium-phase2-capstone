@@ -6,9 +6,33 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'PUBLISHED';
+    const search = searchParams.get('search');
+    const tag = searchParams.get('tag');
     
     const allPosts = loadPosts();
-    const filteredPosts = allPosts.filter(post => post.status === status);
+    let filteredPosts = allPosts.filter(post => post.status === status);
+    
+    // Apply search filter
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredPosts = filteredPosts.filter(post => 
+        post.title.toLowerCase().includes(searchLower) ||
+        post.content.toLowerCase().includes(searchLower) ||
+        post.excerpt?.toLowerCase().includes(searchLower) ||
+        post.author?.name.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    // Apply tag filter
+    if (tag) {
+      const tagLower = tag.toLowerCase();
+      filteredPosts = filteredPosts.filter(post => 
+        post.tags?.some(t => 
+          t.name.toLowerCase().includes(tagLower) ||
+          t.slug.toLowerCase().includes(tagLower)
+        )
+      );
+    }
     
     return NextResponse.json({
       success: true,
