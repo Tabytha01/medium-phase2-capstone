@@ -25,7 +25,7 @@ export default function Header() {
             Medium Blog
           </Link>
 
-          <div className="flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-6">
             <Link
               href="/"
               className={`hover:text-gray-600 ${isActive("/") ? "font-semibold" : ""}`}
@@ -73,6 +73,13 @@ export default function Header() {
                 </Link>
               </>
             )}
+          </div>
+          
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <Link href="/write" className="text-sm px-3 py-1 bg-white/20 rounded">
+              Write
+            </Link>
           </div>
         </div>
       </nav>

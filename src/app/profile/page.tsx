@@ -3,32 +3,39 @@
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import PostCard from "@/components/PostCard";
+import { Post } from "@/types/post";
+import Link from "next/link";
 
 function ProfileContent() {
   const { data: session } = useSession();
   const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (session?.user?.id) {
-      const userKey = `postCount_${session.user.id}`;
-      const postCount = parseInt(localStorage.getItem(userKey) || '0');
-      setStats(prev => ({ ...prev, posts: postCount }));
+      fetchUserPosts();
     }
   }, [session]);
 
-  // Force refresh when component mounts
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (session?.user?.id) {
-        const userKey = `postCount_${session.user.id}`;
-        const postCount = parseInt(localStorage.getItem(userKey) || '0');
-        setStats(prev => ({ ...prev, posts: postCount }));
+  const fetchUserPosts = async () => {
+    try {
+      const response = await fetch('/api/posts?status=PUBLISHED');
+      const data = await response.json();
+      if (data.success) {
+        const userPosts = data.data.filter((post: Post) => post.authorId === session?.user?.id);
+        setPosts(userPosts);
+        setStats(prev => ({ ...prev, posts: userPosts.length }));
       }
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, [session]);
+    } catch (error) {
+      console.error('Error fetching user posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
 
   const handleFollow = () => {
     setStats(prev => ({ 
@@ -57,9 +64,22 @@ function ProfileContent() {
           </p>
 
           <h2 className="text-2xl font-semibold mb-4">My Posts</h2>
-          <div className="text-gray-600 dark:text-gray-400">
-            <p>{stats.posts > 0 ? `You have ${stats.posts} published posts.` : 'No posts yet. Start writing to share your thoughts!'}</p>
-          </div>
+          {loading ? (
+            <div className="text-center py-4">Loading posts...</div>
+          ) : posts.length > 0 ? (
+            <div className="space-y-6">
+              {posts.map(post => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-gray-600 dark:text-gray-400 text-center py-8">
+              <p>No posts yet.</p>
+              <Link href="/write" className="text-blue-600 hover:underline mt-2 inline-block">
+                Write your first story!
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,47 +1,25 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { prisma } from '@/lib/prisma';
-import { formatPost } from '@/lib/posts';
+import { loadPosts } from '@/lib/fileStorage';
 import CommentSection from '@/components/CommentSection';
 import LikeButton from '@/components/LikeButton';
 
 interface PostPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 async function getPost(slug: string) {
-  const post = await prisma.post.findUnique({
-    where: { slug },
-    include: {
-      author: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          avatarUrl: true,
-          bio: true,
-        },
-      },
-      PostTag: {
-        include: {
-          Tag: true,
-        },
-      },
-    },
-  });
-
-  if (!post || post.status !== 'PUBLISHED') {
-    return null;
-  }
-
-  return formatPost(post);
+  const posts = loadPosts();
+  const post = posts.find(p => p.slug === slug && p.status === 'PUBLISHED');
+  return post || null;
 }
 
 export async function generateMetadata({ params }: PostPageProps) {
-  const post = await getPost(params.slug);
+  const { slug } = await params;
+  const post = await getPost(slug);
   
   if (!post) {
     return {
@@ -70,7 +48,8 @@ export async function generateMetadata({ params }: PostPageProps) {
 }
 
 export default async function PostPage({ params }: PostPageProps) {
-  const post = await getPost(params.slug);
+  const { slug } = await params;
+  const post = await getPost(slug);
 
   if (!post) {
     notFound();
@@ -87,27 +66,14 @@ export default async function PostPage({ params }: PostPageProps) {
         </h1>
         
         <div className="flex items-center space-x-4 mb-6">
-          {post.author?.image ? (
-            <Image
-              src={post.author.image}
-              alt={post.author.name}
-              width={48}
-              height={48}
-              className="rounded-full"
-            />
-          ) : (
-            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-lg font-bold text-gray-500">
-              {post.author?.name?.charAt(0)}
-            </div>
-          )}
+          <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-lg font-bold text-gray-500">
+            {post.author?.name?.charAt(0)}
+          </div>
           
           <div>
-            <Link 
-              href={`/profile?user=${post.author?.id}`}
-              className="font-medium text-gray-900 dark:text-gray-100 hover:underline"
-            >
+            <span className="font-medium text-gray-900 dark:text-gray-100">
               {post.author?.name}
-            </Link>
+            </span>
             <div className="text-sm text-gray-500 space-x-2">
               <span>{new Date(post.publishedAt || post.createdAt).toLocaleDateString()}</span>
               <span>·</span>
@@ -119,7 +85,7 @@ export default async function PostPage({ params }: PostPageProps) {
         {/* Tags */}
         {post.tags && post.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-6">
-            {post.tags.map(tag => (
+            {post.tags.map((tag: any) => (
               <Link
                 key={tag.id}
                 href={`/explore?tag=${tag.slug}`}
@@ -173,31 +139,13 @@ export default async function PostPage({ params }: PostPageProps) {
       {/* Author Bio */}
       <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg mb-8">
         <div className="flex items-start space-x-4">
-          {post.author?.image ? (
-            <Image
-              src={post.author.image}
-              alt={post.author.name}
-              width={64}
-              height={64}
-              className="rounded-full"
-            />
-          ) : (
-            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-xl font-bold text-gray-500">
-              {post.author?.name?.charAt(0)}
-            </div>
-          )}
+          <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-xl font-bold text-gray-500">
+            {post.author?.name?.charAt(0)}
+          </div>
           
           <div className="flex-1">
             <h3 className="font-bold text-lg mb-2">{post.author?.name}</h3>
-            {post.author?.bio && (
-              <p className="text-gray-600 dark:text-gray-400 mb-3">{post.author.bio}</p>
-            )}
-            <Link
-              href={`/profile?user=${post.author?.id}`}
-              className="text-green-600 hover:underline"
-            >
-              View Profile
-            </Link>
+            <p className="text-gray-600 dark:text-gray-400 mb-3">Writer and thinker sharing ideas on various topics.</p>
           </div>
         </div>
       </div>

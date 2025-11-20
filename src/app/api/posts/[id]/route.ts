@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { removePost } from '@/lib/fileStorage';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id: postId } = params;
+    const { id: postId } = await params;
     
     const deleted = removePost(postId);
     

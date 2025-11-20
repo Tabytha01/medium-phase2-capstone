@@ -14,16 +14,19 @@ export default function LikeButton({ postId }: LikeButtonProps) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchReactions();
-  }, [postId]);
+    if (postId) {
+      fetchReactions();
+    }
+  }, [postId, session]);
 
   const fetchReactions = async () => {
     try {
-      const response = await fetch(`/api/reactions?postId=${postId}`, {
-        headers: {
-          'x-user-id': session?.user?.id || '',
-        },
-      });
+      const headers: Record<string, string> = {};
+      if (session?.user?.id) {
+        headers['x-user-id'] = session.user.id;
+      }
+      
+      const response = await fetch(`/api/reactions?postId=${postId}`, { headers });
       const data = await response.json();
       if (data.success) {
         setReactions(data.data.reactions);
@@ -35,7 +38,7 @@ export default function LikeButton({ postId }: LikeButtonProps) {
   };
 
   const toggleReaction = async (type: 'CLAP' | 'LIKE') => {
-    if (!session) return;
+    if (!session?.user?.id) return;
     
     setLoading(true);
     try {
@@ -43,13 +46,13 @@ export default function LikeButton({ postId }: LikeButtonProps) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': session.user?.id || '',
+          'x-user-id': session.user.id,
         },
         body: JSON.stringify({ postId, type }),
       });
       
       if (response.ok) {
-        fetchReactions();
+        await fetchReactions();
       }
     } catch (error) {
       console.error('Error toggling reaction:', error);

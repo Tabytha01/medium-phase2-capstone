@@ -20,18 +20,12 @@ export default function Home() {
       const response = await fetch('/api/posts?status=PUBLISHED');
       const data = await response.json();
       if (data.success) {
-        if (session) {
-          // Show user's own posts when logged in
-          const userPosts = data.data.filter((post: Post) => post.authorId === session.user?.id);
-          setPosts(userPosts);
-        } else {
-          // Show all posts when logged out
-          setPosts(data.data);
-        }
+        // Always show all published posts on home page
+        setPosts(data.data);
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
-      setPosts([]); // Set empty array on error
+      setPosts([]);
     } finally {
       setLoading(false);
     }
@@ -47,7 +41,7 @@ export default function Home() {
         <div className="lg:col-span-2 space-y-8">
             <section>
                 <div className="flex justify-between items-center border-b pb-4 mb-6">
-                    <h2 className="text-xl font-semibold">{session ? 'Your Posts' : 'Latest Stories'}</h2>
+                    <h2 className="text-xl font-semibold">Latest Stories</h2>
                 </div>
                 
                 <div className="flex flex-col">
@@ -57,20 +51,7 @@ export default function Home() {
                         ))
                     ) : (
                         <div className="py-12 text-center text-gray-500">
-                            {session ? (
-                                <>
-                                    No posts yet. 
-                                    <Link href="/write" className="text-blue-600 hover:underline ml-1">
-                                        Write your first story!
-                                    </Link>
-                                </>
-                            ) : (
-                                <>
-                                    <Link href="/login" className="text-blue-600 hover:underline">
-                                        Sign in
-                                    </Link> to start writing and sharing your stories.
-                                </>
-                            )}
+                            No stories available yet.
                         </div>
                     )}
                 </div>

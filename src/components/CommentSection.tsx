@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useComments } from '@/hooks/useComments';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -28,7 +27,9 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchComments();
+    if (postId) {
+      fetchComments();
+    }
   }, [postId]);
 
   const fetchComments = async () => {
@@ -46,21 +47,21 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   };
 
   const addComment = async (content: string) => {
-    if (!session) return;
+    if (!session?.user?.id) return;
     
     try {
       const response = await fetch('/api/comments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': session.user?.id || '',
-          'x-user-name': session.user?.name || '',
+          'x-user-id': session.user.id,
+          'x-user-name': session.user.name || 'User',
         },
         body: JSON.stringify({ content, postId }),
       });
       
       if (response.ok) {
-        fetchComments();
+        await fetchComments();
       }
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -68,21 +69,21 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   };
 
   const addReply = async (parentId: string, content: string) => {
-    if (!session) return;
+    if (!session?.user?.id) return;
     
     try {
       const response = await fetch('/api/comments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': session.user?.id || '',
-          'x-user-name': session.user?.name || '',
+          'x-user-id': session.user.id,
+          'x-user-name': session.user.name || 'User',
         },
         body: JSON.stringify({ content, postId, parentId }),
       });
       
       if (response.ok) {
-        fetchComments();
+        await fetchComments();
       }
     } catch (error) {
       console.error('Error adding reply:', error);
@@ -94,7 +95,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || !session) return;
+    if (!newComment.trim() || !session?.user?.id) return;
 
     await addComment(newComment);
     setNewComment('');
@@ -102,7 +103,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
 
   const handleSubmitReply = async (e: React.FormEvent, parentId: string) => {
     e.preventDefault();
-    if (!replyContent.trim() || !session) return;
+    if (!replyContent.trim() || !session?.user?.id) return;
 
     await addReply(parentId, replyContent);
     setReplyContent('');
@@ -110,7 +111,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   };
 
   const CommentItem = ({ comment, isReply = false }: { comment: Comment; isReply?: boolean }) => (
-    <div className={`${isReply ? 'ml-8 border-l-2 border-gray-100 pl-4' : ''} mb-6`}>
+    <div className={`${isReply ? 'ml-4 md:ml-8 border-l-2 border-gray-100 pl-2 md:pl-4' : ''} mb-6`}>
       <div className="flex items-start space-x-3">
         {comment.author.avatarUrl ? (
           <Image
@@ -136,7 +137,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
           
           <p className="text-gray-800 dark:text-gray-200 mb-2">{comment.content}</p>
           
-          {!isReply && session && (
+          {!isReply && session?.user?.id && (
             <button
               onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
               className="text-sm text-gray-500 hover:text-gray-700 transition"
@@ -193,34 +194,36 @@ export default function CommentSection({ postId }: CommentSectionProps) {
 
       {session ? (
         <form onSubmit={handleSubmitComment} className="mb-8">
-          <div className="flex items-start space-x-3">
-            {session.user?.image ? (
-              <Image
-                src={session.user.image}
-                alt={session.user.name || ''}
-                width={40}
-                height={40}
-                className="rounded-full"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
-                {session.user?.name?.charAt(0)}
-              </div>
-            )}
+          <div className="flex flex-col sm:flex-row items-start space-y-3 sm:space-y-0 sm:space-x-3">
+            <div className="hidden sm:block">
+              {session.user?.image ? (
+                <Image
+                  src={session.user.image}
+                  alt={session.user.name || ''}
+                  width={40}
+                  height={40}
+                  className="rounded-full"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
+                  {session.user?.name?.charAt(0)}
+                </div>
+              )}
+            </div>
             
-            <div className="flex-1">
+            <div className="flex-1 w-full">
               <textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="What are your thoughts?"
-                className="w-full p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                rows={4}
+                className="w-full p-3 md:p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm md:text-base"
+                rows={3}
               />
               <div className="flex justify-end mt-3">
                 <button
                   type="submit"
                   disabled={!newComment.trim()}
-                  className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  className="px-4 md:px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm md:text-base"
                 >
                   Publish
                 </button>

@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { loadFollows, saveFollows } from '@/lib/dataStorage';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id: targetUserId } = params;
+    const { id: targetUserId } = await params;
     const userId = request.headers.get('x-user-id');
 
     if (!userId) {
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id: targetUserId } = params;
+    const { id: targetUserId } = await params;
     const userId = request.headers.get('x-user-id');
 
     if (!userId) {

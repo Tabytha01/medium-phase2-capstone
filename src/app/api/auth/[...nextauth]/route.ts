@@ -15,8 +15,10 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Mock authentication - accept any email/password
+        // Use email-based ID for consistency
+        const userId = `user_${credentials.email.replace(/[^a-zA-Z0-9]/g, '_')}`;
         return {
-          id: `user_${Date.now()}`,
+          id: userId,
           name: credentials.email.split('@')[0],
           email: credentials.email,
         };
