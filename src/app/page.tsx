@@ -31,6 +31,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
+      setPosts([]); // Set empty array on error
     } finally {
       setLoading(false);
     }

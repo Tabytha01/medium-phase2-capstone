@@ -22,7 +22,12 @@ function WriteContent() {
 
   const createPostMutation = useMutation({
     mutationFn: async (data: CreatePostInput) => {
-      const response = await axios.post('/api/posts', data);
+      const response = await axios.post('/api/posts', data, {
+        headers: {
+          'x-user-id': session?.user?.id,
+          'x-user-name': session?.user?.name,
+        },
+      });
       return response.data;
     },
     onSuccess: () => {

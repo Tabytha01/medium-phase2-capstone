@@ -33,7 +33,7 @@ export default function ExplorePostCard({ post }: ExplorePostCardProps) {
                     )}
                     <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{post.author?.name}</span>
                 </div>
-                {!isOwnPost && post.author?.id && (
+                {!isOwnPost && post.author?.id && session && (
                     <FollowButton userId={post.author.id} />
                 )}
             </div>

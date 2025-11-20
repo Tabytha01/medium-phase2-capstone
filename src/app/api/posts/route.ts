@@ -1,223 +1,80 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
-import { generateSlug, validatePost, formatPost } from '@/lib/posts';
 import { PostStatus } from '@/types/post';
+import { mockPosts, addMockPost } from '@/lib/mockStorage';
 
-// GET /api/posts - List all posts with pagination and filters
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
-    const limit = Math.min(50, parseInt(searchParams.get('limit') || '10'));
-    const status = (searchParams.get('status') as PostStatus) || 'PUBLISHED';
-    const authorId = searchParams.get('authorId');
-    const search = searchParams.get('search');
-    const tag = searchParams.get('tag');
-
-    const skip = (page - 1) * limit;
-
-    const where: any = {
-      status: status,
-    };
-
-    if (authorId) {
-      where.authorId = authorId;
-    }
-
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { content: { contains: search, mode: 'insensitive' } },
-        { excerpt: { contains: search, mode: 'insensitive' } },
-      ];
-    }
-
-    if (tag) {
-      where.PostTag = {
-        some: {
-          Tag: {
-            slug: tag,
-          },
-        },
-      };
-    }
-
-    const [posts, total] = await Promise.all([
-      prisma.post.findMany({
-        where,
-        include: {
-          author: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              avatarUrl: true,
-              bio: true,
-            },
-          },
-          PostTag: {
-            include: {
-              Tag: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        skip,
-        take: limit,
-      }),
-      prisma.post.count({ where }),
-    ]);
-
+    const status = searchParams.get('status') || 'PUBLISHED';
+    
+    const filteredPosts = mockPosts.filter(post => post.status === status);
+    
     return NextResponse.json({
       success: true,
-      data: posts.map(formatPost),
+      data: filteredPosts,
       pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
+        page: 1,
+        limit: 10,
+        total: filteredPosts.length,
+        pages: 1,
       },
     });
   } catch (error: any) {
-    console.error('[API] GET /api/posts error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to fetch posts' },
+      { success: false, error: 'Failed to fetch posts' },
       { status: 500 }
     );
   }
 }
 
-// POST /api/posts - Create a new post
 export async function POST(request: NextRequest) {
   try {
-    console.log('POST /api/posts called');
-    const user = await getCurrentUser();
-    console.log('Current user:', user);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
-    const validation = validatePost(body);
+    const { title, content, excerpt, coverImage, tags, status } = body;
 
-    if (!validation.valid) {
+    if (!title || !content) {
       return NextResponse.json(
-        { success: false, error: 'Validation failed', errors: validation.errors },
+        { success: false, error: 'Title and content are required' },
         { status: 400 }
       );
     }
 
-    const { title, content, excerpt, coverImage, tags, status } = validation.data!;
-    const slug = generateSlug(title);
-
-    // Handle tags creation/connection
-    const tagConnectOrCreate = tags?.map((tagName) => {
-        const tagSlug = tagName.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-        return {
-            where: { slug: tagSlug },
-            create: { name: tagName, slug: tagSlug },
-        };
-    });
-
-    const post = await prisma.post.create({
-      data: {
-        title,
-        slug,
-        content,
-        excerpt,
-        coverImage,
-        status: (status as PostStatus) || 'DRAFT',
-        publishedAt: status === 'PUBLISHED' ? new Date() : null,
-        authorId: user.id,
-        PostTag: tagConnectOrCreate ? {
-            create: tagConnectOrCreate.map(t => ({
-                Tag: {
-                    connectOrCreate: t
-                }
-            }))
-        } : undefined
+    const userId = request.headers.get('x-user-id') || `user_${Date.now()}`;
+    const userName = request.headers.get('x-user-name') || 'User';
+    
+    const post = {
+      id: `post_${Date.now()}`,
+      title,
+      slug: title.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now(),
+      content,
+      excerpt,
+      coverImage,
+      status: status || 'DRAFT',
+      publishedAt: status === 'PUBLISHED' ? new Date().toISOString() : null,
+      authorId: userId,
+      author: {
+        id: userId,
+        name: userName,
+        email: `${userName.toLowerCase()}@example.com`,
       },
-      include: {
-        author: true,
-        PostTag: {
-          include: {
-            Tag: true
-          }
-        }
-      }
-    });
+      tags: tags?.map((tag: string, index: number) => ({
+        id: `tag_${index}`,
+        name: tag,
+        slug: tag.toLowerCase(),
+      })) || [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    addMockPost(post);
 
     return NextResponse.json(
-      { success: true, data: formatPost(post) },
+      { success: true, data: post },
       { status: 201 }
     );
   } catch (error: any) {
-    console.error('[API] POST /api/posts error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to create post' },
-      { status: 500 }
-    );
-  }
-}
-
-// DELETE /api/posts/[id] - Delete a post
-export async function DELETE(request: NextRequest) {
-  try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const url = new URL(request.url);
-    const postId = url.pathname.split('/').pop();
-
-    if (!postId) {
-      return NextResponse.json(
-        { success: false, error: 'Post ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Check if post exists and user owns it
-    const post = await prisma.post.findUnique({
-      where: { id: postId },
-    });
-
-    if (!post) {
-      return NextResponse.json(
-        { success: false, error: 'Post not found' },
-        { status: 404 }
-      );
-    }
-
-    if (post.authorId !== user.id) {
-      return NextResponse.json(
-        { success: false, error: 'You can only delete your own posts' },
-        { status: 403 }
-      );
-    }
-
-    await prisma.post.delete({
-      where: { id: postId },
-    });
-
-    return NextResponse.json(
-      { success: true, message: 'Post deleted successfully' },
-      { status: 200 }
-    );
-  } catch (error: any) {
-    console.error('[API] DELETE /api/posts error:', error);
-    return NextResponse.json(
-      { success: false, error: error.message || 'Failed to delete post' },
+      { success: false, error: 'Failed to create post' },
       { status: 500 }
     );
   }
