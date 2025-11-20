@@ -1,36 +1,109 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+
+interface Comment {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: {
+    id: string;
+    name: string;
+    avatarUrl?: string;
+  };
+  replies?: Comment[];
+}
 
 export function useComments(postId: string) {
-  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const { data: comments, isLoading } = useQuery({
-    queryKey: ['comments', postId],
-    queryFn: async () => {
-      const { data } = await axios.get(`/api/comments?postId=${postId}`);
-      return data.data;
-    },
-    enabled: !!postId,
-  });
+  const fetchComments = async () => {
+    try {
+      const response = await fetch(`/api/comments?postId=${postId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setComments(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const addComment = useMutation({
-    mutationFn: async ({ content, parentId }: { content: string; parentId?: string }) => {
-      const { data } = await axios.post('/api/comments', { content, postId, parentId });
-      return data.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
-    },
-  });
+  const addComment = async (content: string) => {
+    if (!session) return;
 
-  const deleteComment = useMutation({
-    mutationFn: async (commentId: string) => {
-      await axios.delete(`/api/comments/${commentId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
-    },
-  });
+    try {
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content,
+          postId,
+        }),
+      });
 
-  return { comments, isLoading, addComment, deleteComment };
+      const data = await response.json();
+      
+      if (data.success) {
+        setComments(prev => [data.data, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+    }
+  };
+
+  const addReply = async (parentId: string, content: string) => {
+    if (!session) return;
+
+    try {
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content,
+          postId,
+          parentId,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setComments(prev => 
+          prev.map(comment => 
+            comment.id === parentId
+              ? {
+                  ...comment,
+                  replies: [...(comment.replies || []), data.data]
+                }
+              : comment
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error adding reply:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchComments();
+  }, [postId]);
+
+  return {
+    comments,
+    loading,
+    addComment,
+    addReply,
+    refetch: fetchComments,
+  };
 }

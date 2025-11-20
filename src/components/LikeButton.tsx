@@ -1,7 +1,8 @@
-"use client";
+'use client';
 
-import { useReactions } from '@/hooks/useReactions';
+import { useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useReactions } from '@/hooks/useReactions';
 
 interface LikeButtonProps {
   postId: string;
@@ -9,26 +10,52 @@ interface LikeButtonProps {
 
 export default function LikeButton({ postId }: LikeButtonProps) {
   const { data: session } = useSession();
-  const { reactions, toggleReaction } = useReactions(postId);
+  const { reactions, userReaction, toggleReaction, loading } = useReactions(postId);
+  const [isAnimating, setIsAnimating] = useState(false);
 
-  const handleLike = () => {
-    if (!session) {
-        // Redirect to login or show toast
-        alert('Please sign in to like posts');
-        return;
-    }
-    toggleReaction.mutate('LIKE');
+  const handleClick = async () => {
+    if (!session) return;
+    
+    setIsAnimating(true);
+    await toggleReaction('CLAP');
+    setTimeout(() => setIsAnimating(false), 300);
   };
 
+  const clapCount = reactions.filter(r => r.type === 'CLAP').length;
+  const hasClapped = userReaction?.type === 'CLAP';
+
   return (
-    <button 
-        onClick={handleLike}
-        className="flex items-center gap-2 text-gray-500 hover:text-green-600 transition"
-    >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.247-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904M14.25 9h2.25M5.904 18.75c.083.205.173.405.27.602.197.4-.077.898-.521.898h-.991a4.418 4.418 0 0 0-.989.11l-2.298.602c-.354.092-.71.16-1.069.205a.75.75 0 0 1-.842-.75V7.505a.75.75 0 0 1 .842-.75c.359.045.715.113 1.069.206l2.298.602c.327.086.661.122.989.11h.991c.445 0 .718.498.521.898a9.06 9.06 0 0 1-.27.602m-2.25 7.5 2.25 7.5" />
+    <div className="flex items-center space-x-2">
+      <button
+        onClick={handleClick}
+        disabled={!session || loading}
+        className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-200 ${
+          hasClapped
+            ? 'bg-green-100 text-green-700 border border-green-200'
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
+        } ${isAnimating ? 'scale-110' : 'scale-100'} ${
+          !session ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+        }`}
+      >
+        <svg
+          className={`w-5 h-5 transition-transform ${isAnimating ? 'scale-125' : 'scale-100'}`}
+          fill={hasClapped ? 'currentColor' : 'none'}
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11"
+          />
         </svg>
-        <span>{reactions?.likes || 0}</span>
-    </button>
+        <span className="font-medium">{clapCount}</span>
+      </button>
+      
+      {!session && (
+        <span className="text-xs text-gray-500">Sign in to clap</span>
+      )}
+    </div>
   );
 }

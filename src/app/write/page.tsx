@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Editor from "@/components/Editor";
-import { postsApi } from "@/lib/api/posts";
-import { convertToBase64 } from "@/lib/cloudinary";
-import type { CreatePostInput } from "@/lib/types/post";
+import { CreatePostInput } from "@/types/post";
+import axios from "axios";
 
 function WriteContent() {
   const router = useRouter();

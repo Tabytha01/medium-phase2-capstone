@@ -1,8 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import { ReactionType } from '@prisma/client';
 
+// GET /api/reactions - Get reactions for a post
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const postId = searchParams.get('postId');
+
+    if (!postId) {
+      return NextResponse.json(
+        { success: false, error: 'Post ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const user = await getCurrentUser();
+    
+    const [reactions, userReaction] = await Promise.all([
+      prisma.reaction.findMany({
+        where: { postId },
+        include: {
+          User: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }),
+      user ? prisma.reaction.findFirst({
+        where: {
+          postId,
+          userId: user.id,
+        },
+      }) : null,
+    ]);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        reactions,
+        userReaction,
+      },
+    });
+  } catch (error: any) {
+    console.error('[API] GET /api/reactions error:', error);
+    return NextResponse.json(
+      { success: false, error: error.message || 'Failed to fetch reactions' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/reactions - Toggle a reaction
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -17,87 +68,80 @@ export async function POST(request: NextRequest) {
     const { postId, type } = body;
 
     if (!postId || !type) {
-        return NextResponse.json(
-            { success: false, error: 'postId and type are required' },
-            { status: 400 }
-        );
+      return NextResponse.json(
+        { success: false, error: 'Post ID and reaction type are required' },
+        { status: 400 }
+      );
     }
 
-    // Check if reaction exists
-    const existingReaction = await prisma.reaction.findUnique({
-        where: {
-            type_postId_userId: {
-                postId,
-                userId: user.id,
-                type: type as ReactionType
-            }
-        }
+    if (!['CLAP', 'LIKE'].includes(type)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid reaction type' },
+        { status: 400 }
+      );
+    }
+
+    // Verify post exists
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
     });
 
-    if (existingReaction) {
-        // Toggle off
-        await prisma.reaction.delete({
-            where: { id: existingReaction.id }
-        });
-        return NextResponse.json({ success: true, active: false });
-    } else {
-        // Toggle on
-        await prisma.reaction.create({
-            data: {
-                id: crypto.randomUUID(),
-                postId,
-                userId: user.id,
-                type: type as ReactionType
-            }
-        });
-        return NextResponse.json({ success: true, active: true });
+    if (!post) {
+      return NextResponse.json(
+        { success: false, error: 'Post not found' },
+        { status: 404 }
+      );
     }
 
+    // Check if user already has a reaction on this post
+    const existingReaction = await prisma.reaction.findFirst({
+      where: {
+        postId,
+        userId: user.id,
+      },
+    });
+
+    let reaction;
+
+    if (existingReaction) {
+      if (existingReaction.type === type) {
+        // Same reaction type - remove it
+        await prisma.reaction.delete({
+          where: { id: existingReaction.id },
+        });
+        
+        return NextResponse.json({
+          success: true,
+          data: { removed: true },
+        });
+      } else {
+        // Different reaction type - update it
+        reaction = await prisma.reaction.update({
+          where: { id: existingReaction.id },
+          data: { type },
+        });
+      }
+    } else {
+      // No existing reaction - create new one
+      reaction = await prisma.reaction.create({
+        data: {
+          id: `${type}_${postId}_${user.id}`,
+          type,
+          postId,
+          userId: user.id,
+        },
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: reaction,
+    });
   } catch (error: any) {
     console.error('[API] POST /api/reactions error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to update reaction' },
+      { success: false, error: error.message || 'Failed to toggle reaction' },
       { status: 500 }
     );
   }
-}
-
-// GET /api/reactions?postId=...
-export async function GET(request: NextRequest) {
-    const { searchParams } = new URL(request.url);
-    const postId = searchParams.get('postId');
-    
-    if (!postId) {
-        return NextResponse.json(
-            { success: false, error: 'postId is required' },
-            { status: 400 }
-        );
-    }
-
-    try {
-        const [likes, claps, userReaction] = await Promise.all([
-            prisma.reaction.count({ where: { postId, type: 'LIKE' } }),
-            prisma.reaction.count({ where: { postId, type: 'CLAP' } }),
-            // Since we can't easily get current user in GET without session,
-            // we might skip userReaction here or require auth.
-            // For public view, just counts are enough.
-             Promise.resolve(null)
-        ]);
-
-        // If user is logged in, we could check their reaction, but that requires async headers/session check
-        // For now return counts
-        return NextResponse.json({ 
-            success: true, 
-            data: { 
-                likes, 
-                claps 
-            } 
-        });
-
-    } catch (error: any) {
-         return NextResponse.json(
-            { success: false, error: 'Failed to fetch reactions' },
-            { status: 500 }
-        );
-    }
 }
