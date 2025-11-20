@@ -24,9 +24,12 @@ function WriteContent() {
       return response.data;
     },
     onSuccess: () => {
-      // Increment post count in localStorage
-      const currentCount = parseInt(localStorage.getItem('postCount') || '0');
-      localStorage.setItem('postCount', (currentCount + 1).toString());
+      // Clear and recalculate post count
+      localStorage.removeItem('postCount');
+      const posts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+      posts.push({ id: Date.now(), title, createdAt: new Date().toISOString() });
+      localStorage.setItem('userPosts', JSON.stringify(posts));
+      localStorage.setItem('postCount', posts.length.toString());
       
       alert('Post published successfully!');
       router.push("/profile");

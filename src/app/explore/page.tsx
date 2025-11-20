@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import PostCard from '@/components/PostCard';
+import ExplorePostCard from '@/components/ExplorePostCard';
 import { Post } from '@/types/post';
 
 export default function ExplorePage() {
@@ -112,7 +112,7 @@ export default function ExplorePage() {
             </div>
           ) : posts.length > 0 ? (
             posts.map(post => (
-              <PostCard key={post.id} post={post} />
+              <ExplorePostCard key={post.id} post={post} />
             ))
           ) : (
             <div className="text-center py-12">

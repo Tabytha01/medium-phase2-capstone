@@ -1,40 +1,3 @@
-import Link from 'next/link';
-import { prisma } from '../lib/prisma';
-import { formatPost } from '../lib/posts';
-import PostCard from '../components/PostCard';
-
-export const dynamic = 'force-dynamic'; // Or usage of revalidate
-
-async function getPosts() {
-  const posts = await prisma.post.findMany({
-    where: {
-      status: 'PUBLISHED',
-    },
-    include: {
-      author: {
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            avatarUrl: true,
-            bio: true
-        }
-      },
-      PostTag: {
-        include: {
-          Tag: true,
-        },
-      },
-    },
-    orderBy: {
-      publishedAt: 'desc',
-    },
-    take: 20,
-  });
-
-  return posts.map(formatPost);
-}
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -54,17 +17,15 @@ export default function Home() {
 
   const fetchPosts = async () => {
     try {
-      // Check if user is following anyone
-      const followingList = JSON.parse(localStorage.getItem('following') || '[]');
-      
-      if (!session || followingList.length === 0) {
-        // Show sample posts or empty state
-        setPosts([]);
-      } else {
-        // In a real app, filter posts by followed users
-        const response = await fetch('/api/posts?status=PUBLISHED');
-        const data = await response.json();
-        if (data.success) {
+      const response = await fetch('/api/posts?status=PUBLISHED');
+      const data = await response.json();
+      if (data.success) {
+        if (session) {
+          // Show user's own posts when logged in
+          const userPosts = data.data.filter((post: Post) => post.authorId === session.user?.id);
+          setPosts(userPosts);
+        } else {
+          // Show all posts when logged out
           setPosts(data.data);
         }
       }
@@ -85,26 +46,30 @@ export default function Home() {
         <div className="lg:col-span-2 space-y-8">
             <section>
                 <div className="flex justify-between items-center border-b pb-4 mb-6">
-                    <h2 className="text-xl font-semibold">Your Feed</h2>
+                    <h2 className="text-xl font-semibold">{session ? 'Your Posts' : 'Latest Stories'}</h2>
                 </div>
                 
                 <div className="flex flex-col">
-                    {!session ? (
-                        <div className="py-12 text-center text-gray-500">
-                            <Link href="/login" className="text-green-600 hover:underline">
-                                Sign in
-                            </Link> to see your personalized feed.
-                        </div>
-                    ) : posts.length > 0 ? (
+                    {posts.length > 0 ? (
                         posts.map(post => (
                             <PostCard key={post.id} post={post} />
                         ))
                     ) : (
                         <div className="py-12 text-center text-gray-500">
-                            No stories from people you follow yet. 
-                            <Link href="/explore" className="text-green-600 hover:underline ml-1">
-                                Discover writers to follow!
-                            </Link>
+                            {session ? (
+                                <>
+                                    No posts yet. 
+                                    <Link href="/write" className="text-green-600 hover:underline ml-1">
+                                        Write your first story!
+                                    </Link>
+                                </>
+                            ) : (
+                                <>
+                                    <Link href="/login" className="text-green-600 hover:underline">
+                                        Sign in
+                                    </Link> to start writing and sharing your stories.
+                                </>
+                            )}
                         </div>
                     )}
                 </div>

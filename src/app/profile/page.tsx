@@ -7,12 +7,35 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 function ProfileContent() {
   const { data: session } = useSession();
   const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    // Get posts count from localStorage
-    const postCount = parseInt(localStorage.getItem('postCount') || '0');
-    setStats(prev => ({ ...prev, posts: postCount }));
-  }, []);
+    const updatePostCount = () => {
+      const posts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+      const postCount = posts.length;
+      localStorage.setItem('postCount', postCount.toString());
+      setStats(prev => ({ ...prev, posts: postCount }));
+    };
+    
+    updatePostCount();
+    
+    // Listen for storage changes
+    window.addEventListener('storage', updatePostCount);
+    
+    // Also check when component becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        updatePostCount();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('storage', updatePostCount);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [refreshKey]);
 
   const handleFollow = () => {
     setStats(prev => ({ 
