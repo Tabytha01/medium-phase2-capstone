@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { loadComments, saveComments } from '@/lib/dataStorage';
 
-// GET /api/comments - Get comments for a post
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -15,125 +13,67 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const comments = await prisma.comment.findMany({
-      where: {
-        postId,
-        parentId: null, // Only get top-level comments
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatarUrl: true,
-          },
-        },
-        replies: {
-          include: {
-            author: {
-              select: {
-                id: true,
-                name: true,
-                avatarUrl: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: 'asc',
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const allComments = loadComments();
+    const postComments = allComments.filter(comment => 
+      comment.postId === postId && !comment.parentId
+    );
+
+    // Add replies to each comment
+    const commentsWithReplies = postComments.map(comment => ({
+      ...comment,
+      replies: allComments.filter(reply => reply.parentId === comment.id)
+    }));
 
     return NextResponse.json({
       success: true,
-      data: comments,
+      data: commentsWithReplies,
     });
   } catch (error: any) {
-    console.error('[API] GET /api/comments error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to fetch comments' },
+      { success: false, error: 'Failed to fetch comments' },
       { status: 500 }
     );
   }
 }
 
-// POST /api/comments - Create a new comment
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const { content, postId, parentId } = body;
+    const userId = request.headers.get('x-user-id');
+    const userName = request.headers.get('x-user-name');
 
-    if (!content || !postId) {
+    if (!content || !postId || !userId) {
       return NextResponse.json(
-        { success: false, error: 'Content and post ID are required' },
+        { success: false, error: 'Content, post ID, and user ID are required' },
         { status: 400 }
       );
     }
 
-    // Verify post exists
-    const post = await prisma.post.findUnique({
-      where: { id: postId },
-    });
-
-    if (!post) {
-      return NextResponse.json(
-        { success: false, error: 'Post not found' },
-        { status: 404 }
-      );
-    }
-
-    // If parentId is provided, verify parent comment exists
-    if (parentId) {
-      const parentComment = await prisma.comment.findUnique({
-        where: { id: parentId },
-      });
-
-      if (!parentComment) {
-        return NextResponse.json(
-          { success: false, error: 'Parent comment not found' },
-          { status: 404 }
-        );
-      }
-    }
-
-    const comment = await prisma.comment.create({
-      data: {
-        content,
-        postId,
-        authorId: user.id,
-        parentId: parentId || null,
+    const comment = {
+      id: `comment_${Date.now()}`,
+      content,
+      postId,
+      parentId: parentId || null,
+      createdAt: new Date().toISOString(),
+      author: {
+        id: userId,
+        name: userName || 'User',
+        avatarUrl: null,
       },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatarUrl: true,
-          },
-        },
-      },
-    });
+    };
+
+    const comments = loadComments();
+    comments.push(comment);
+    saveComments(comments);
 
     return NextResponse.json(
       { success: true, data: comment },
       { status: 201 }
     );
   } catch (error: any) {
-    console.error('[API] POST /api/comments error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to create comment' },
+      { success: false, error: 'Failed to create comment' },
       { status: 500 }
     );
   }

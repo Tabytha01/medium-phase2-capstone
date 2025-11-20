@@ -24,7 +24,70 @@ interface CommentSectionProps {
 
 export default function CommentSection({ postId }: CommentSectionProps) {
   const { data: session } = useSession();
-  const { comments, loading, addComment, addReply } = useComments(postId);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchComments();
+  }, [postId]);
+
+  const fetchComments = async () => {
+    try {
+      const response = await fetch(`/api/comments?postId=${postId}`);
+      const data = await response.json();
+      if (data.success) {
+        setComments(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addComment = async (content: string) => {
+    if (!session) return;
+    
+    try {
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': session.user?.id || '',
+          'x-user-name': session.user?.name || '',
+        },
+        body: JSON.stringify({ content, postId }),
+      });
+      
+      if (response.ok) {
+        fetchComments();
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+    }
+  };
+
+  const addReply = async (parentId: string, content: string) => {
+    if (!session) return;
+    
+    try {
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': session.user?.id || '',
+          'x-user-name': session.user?.name || '',
+        },
+        body: JSON.stringify({ content, postId, parentId }),
+      });
+      
+      if (response.ok) {
+        fetchComments();
+      }
+    } catch (error) {
+      console.error('Error adding reply:', error);
+    }
+  };
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');

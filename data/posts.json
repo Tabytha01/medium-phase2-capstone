@@ -1,0 +1,27 @@
+[
+  {
+    "id": "post_1763671322729",
+    "title": "the sun and the moon",
+    "slug": "the-sun-and-the-moon-1763671322729",
+    "content": "<p>sdfghjklhgurgihegh</p>",
+    "excerpt": "dfghjkl",
+    "coverImage": "",
+    "status": "PUBLISHED",
+    "publishedAt": "2025-11-20T20:42:02.729Z",
+    "authorId": "user_1763670502170",
+    "author": {
+      "id": "user_1763670502170",
+      "name": "beck",
+      "email": "beck@example.com"
+    },
+    "tags": [
+      {
+        "id": "tag_0",
+        "name": "#kidstory",
+        "slug": "#kidstory"
+      }
+    ],
+    "createdAt": "2025-11-20T20:42:02.729Z",
+    "updatedAt": "2025-11-20T20:42:02.729Z"
+  }
+]

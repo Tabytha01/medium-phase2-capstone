@@ -83,25 +83,7 @@ export default function ExplorePage() {
           </div>
         </form>
 
-        {/* Popular Tags */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4">Popular Topics</h3>
-          <div className="flex flex-wrap gap-2">
-            {popularTags.map(tag => (
-              <button
-                key={tag}
-                onClick={() => handleTagClick(tag.toLowerCase())}
-                className={`px-4 py-2 rounded-full text-sm transition ${
-                  selectedTag === tag.toLowerCase()
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        </div>
+
 
         {/* Results */}
         <div className="space-y-6">

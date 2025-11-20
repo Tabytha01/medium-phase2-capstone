@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { removeMockPost } from '@/lib/mockStorage';
+import { removePost } from '@/lib/fileStorage';
 
 interface RouteParams {
   params: {
@@ -11,7 +11,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id: postId } = params;
     
-    const deleted = removeMockPost(postId);
+    const deleted = removePost(postId);
     
     if (!deleted) {
       return NextResponse.json(

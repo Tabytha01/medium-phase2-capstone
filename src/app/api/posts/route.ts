@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PostStatus } from '@/types/post';
-import { mockPosts, addMockPost } from '@/lib/mockStorage';
+import { loadPosts, addPost } from '@/lib/fileStorage';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'PUBLISHED';
     
-    const filteredPosts = mockPosts.filter(post => post.status === status);
+    const allPosts = loadPosts();
+    const filteredPosts = allPosts.filter(post => post.status === status);
     
     return NextResponse.json({
       success: true,
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date().toISOString(),
     };
 
-    addMockPost(post);
+    addPost(post);
 
     return NextResponse.json(
       { success: true, data: post },

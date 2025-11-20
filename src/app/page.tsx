@@ -60,13 +60,13 @@ export default function Home() {
                             {session ? (
                                 <>
                                     No posts yet. 
-                                    <Link href="/write" className="text-green-600 hover:underline ml-1">
+                                    <Link href="/write" className="text-blue-600 hover:underline ml-1">
                                         Write your first story!
                                     </Link>
                                 </>
                             ) : (
                                 <>
-                                    <Link href="/login" className="text-green-600 hover:underline">
+                                    <Link href="/login" className="text-blue-600 hover:underline">
                                         Sign in
                                     </Link> to start writing and sharing your stories.
                                 </>
@@ -80,21 +80,20 @@ export default function Home() {
         <aside className="hidden lg:block space-y-8">
              <div className="sticky top-24">
                 <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg">
-                    <h3 className="font-bold text-lg mb-4">Recommended Topics</h3>
-                    <div className="flex flex-wrap gap-2">
-                        {['Technology', 'Programming', 'Data Science', 'Machine Learning', 'Web Development', 'Life', 'Self Improvement'].map(topic => (
-                             <Link 
-                                key={topic}
-                                href={`/explore?search=${topic}`} 
-                                className="px-3 py-2 bg-white dark:bg-gray-800 border rounded-full text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                            >
-                                {topic}
-                            </Link>
-                        ))}
+                    <div className="text-center">
+                        <div className="w-32 h-32 mx-auto mb-4 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                            <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                            </svg>
+                        </div>
+                        <h3 className="font-bold text-lg mb-2">Start Reading</h3>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+                            Discover amazing stories from writers around the world
+                        </p>
+                        <Link href="/explore" className="inline-block px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition">
+                            Explore Stories
+                        </Link>
                     </div>
-                    <Link href="/explore" className="block mt-4 text-green-600 text-sm hover:underline">
-                        See all topics
-                    </Link>
                 </div>
                 
                 <div className="mt-8 p-6 border rounded-lg">

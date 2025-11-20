@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { loadFollows, saveFollows } from '@/lib/dataStorage';
 
 interface RouteParams {
   params: {
@@ -8,111 +7,72 @@ interface RouteParams {
   };
 }
 
-// POST /api/users/[id]/follow - Follow/unfollow a user
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
+    const { id: targetUserId } = params;
+    const userId = request.headers.get('x-user-id');
+
+    if (!userId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { id: targetUserId } = params;
-
-    if (user.id === targetUserId) {
+    if (userId === targetUserId) {
       return NextResponse.json(
         { success: false, error: 'Cannot follow yourself' },
         { status: 400 }
       );
     }
 
-    // Verify target user exists
-    const targetUser = await prisma.user.findUnique({
-      where: { id: targetUserId },
-    });
+    const follows = loadFollows();
+    const existingIndex = follows.findIndex(f => 
+      f.followerId === userId && f.followingId === targetUserId
+    );
 
-    if (!targetUser) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    // Check if already following
-    const existingFollow = await prisma.follow.findUnique({
-      where: {
-        followerId_followingId: {
-          followerId: user.id,
-          followingId: targetUserId,
-        },
-      },
-    });
-
-    if (existingFollow) {
+    if (existingIndex > -1) {
       // Unfollow
-      await prisma.follow.delete({
-        where: { id: existingFollow.id },
-      });
-
-      return NextResponse.json({
-        success: true,
-        data: { following: false },
-      });
+      follows.splice(existingIndex, 1);
+      saveFollows(follows);
+      return NextResponse.json({ success: true, data: { following: false } });
     } else {
       // Follow
-      await prisma.follow.create({
-        data: {
-          followerId: user.id,
-          followingId: targetUserId,
-        },
+      follows.push({
+        id: `follow_${Date.now()}`,
+        followerId: userId,
+        followingId: targetUserId,
+        createdAt: new Date().toISOString(),
       });
-
-      return NextResponse.json({
-        success: true,
-        data: { following: true },
-      });
+      saveFollows(follows);
+      return NextResponse.json({ success: true, data: { following: true } });
     }
   } catch (error: any) {
-    console.error('[API] POST /api/users/[id]/follow error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to toggle follow' },
+      { success: false, error: 'Failed to toggle follow' },
       { status: 500 }
     );
   }
 }
 
-// GET /api/users/[id]/follow - Get follow status
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const user = await getCurrentUser();
     const { id: targetUserId } = params;
+    const userId = request.headers.get('x-user-id');
 
-    if (!user) {
-      return NextResponse.json({
-        success: true,
-        data: { following: false },
-      });
+    if (!userId) {
+      return NextResponse.json({ success: true, data: { following: false } });
     }
 
-    const follow = await prisma.follow.findUnique({
-      where: {
-        followerId_followingId: {
-          followerId: user.id,
-          followingId: targetUserId,
-        },
-      },
-    });
+    const follows = loadFollows();
+    const isFollowing = follows.some(f => 
+      f.followerId === userId && f.followingId === targetUserId
+    );
 
-    return NextResponse.json({
-      success: true,
-      data: { following: !!follow },
-    });
+    return NextResponse.json({ success: true, data: { following: isFollowing } });
   } catch (error: any) {
-    console.error('[API] GET /api/users/[id]/follow error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to get follow status' },
+      { success: false, error: 'Failed to get follow status' },
       { status: 500 }
     );
   }
