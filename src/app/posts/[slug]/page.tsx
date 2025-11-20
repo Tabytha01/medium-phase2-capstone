@@ -1,9 +1,10 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { prisma } from '@/lib/prisma';
-import { formatPost } from '@/lib/posts';
-import { Post } from '@/types/post';
+import { prisma } from '../../../lib/prisma';
+import { formatPost } from '../../../lib/posts';
+import LikeButton from '../../../components/LikeButton';
+import CommentSection from '../../../components/CommentSection';
 
 interface PageProps {
   params: Promise<{ slug: string }>;

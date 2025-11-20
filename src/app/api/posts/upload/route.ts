@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthUser } from "../../../../lib/api/posts";
+import { getCurrentUser } from '@/lib/auth';
 
 // POST /api/posts/upload - Upload image for post
 export async function POST(request: NextRequest) {
   try {
-    const user = await getAuthUser(request);
+    const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },

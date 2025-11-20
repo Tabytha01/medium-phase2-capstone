@@ -22,7 +22,6 @@ export async function GET(request: NextRequest) {
             select: {
                 id: true,
                 name: true,
-                image: true, // Note: schema uses avatarUrl but User type expects image or map it
                 avatarUrl: true
             }
         },
@@ -32,7 +31,6 @@ export async function GET(request: NextRequest) {
                     select: {
                         id: true,
                         name: true,
-                        image: true,
                         avatarUrl: true
                     }
                 }

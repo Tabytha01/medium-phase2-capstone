@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { prisma } from '@/lib/prisma';
-import { formatPost } from '@/lib/posts';
-import PostCard from '@/components/PostCard';
+import { prisma } from '../lib/prisma';
+import { formatPost } from '../lib/posts';
+import PostCard from '../components/PostCard';
 
 export const dynamic = 'force-dynamic'; // Or usage of revalidate
 
