@@ -96,7 +96,7 @@ function WriteContent() {
           <button
             onClick={handlePublish}
             disabled={createPostMutation.isPending}
-            className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded hover:opacity-80"
+            className="px-4 py-2 bg-[#4A7FA7] dark:bg-white text-white dark:text-[#4A7FA7] rounded hover:opacity-80"
           >
             Publish
           </button>
@@ -151,7 +151,7 @@ function WriteContent() {
               value={excerpt}
               onChange={(e) => setExcerpt(e.target.value)}
               placeholder="Write a brief excerpt (optional)"
-              className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-black dark:bg-gray-800"
+              className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-[#4A7FA7] dark:bg-gray-800"
               rows={2}
             />
           </div>
@@ -169,11 +169,11 @@ function WriteContent() {
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleAddTag()}
                 placeholder="Add a tag"
-                className="flex-1 px-4 py-2 border rounded focus:ring-2 focus:ring-black dark:bg-gray-800"
+                className="flex-1 px-4 py-2 border rounded focus:ring-2 focus:ring-[#4A7FA7] dark:bg-gray-800"
               />
               <button
                 onClick={handleAddTag}
-                className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded hover:opacity-80"
+                className="px-4 py-2 bg-[#4A7FA7] dark:bg-white text-white dark:text-[#4A7FA7] rounded hover:opacity-80"
               >
                 Add
               </button>

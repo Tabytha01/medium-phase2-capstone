@@ -1,32 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseServer, getAuthUser } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
 import { validatePost, formatPost } from '@/lib/posts';
+import { PostStatus } from '@/types/post';
 
-// GET /api/posts/[id] - Get a single post
+// GET /api/posts/[id] - Get a single post by ID or Slug
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  props: { params: Promise<{ id: string }> }
 ) {
+  const params = await props.params;
   try {
-    const { id } = await params;
-    const supabase = getSupabaseServer();
+    const { id } = params;
 
-    const { data, error } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const post = await prisma.post.findFirst({
+      where: {
+        OR: [
+          { id: id },
+          { slug: id }
+        ]
+      },
+      include: {
+        author: {
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                avatarUrl: true,
+                bio: true
+            }
+        },
+        PostTag: {
+          include: {
+            Tag: true,
+          },
+        },
+      },
+    });
 
-    if (error || !data) {
+    if (!post) {
       return NextResponse.json(
         { success: false, error: 'Post not found' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ success: true, data: formatPost(data) });
+    return NextResponse.json({ success: true, data: formatPost(post) });
   } catch (error: any) {
-    console.error('[v0] GET /api/posts/[id] error:', error);
+    console.error('[API] GET /api/posts/[id] error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch post' },
       { status: 500 }
@@ -37,10 +58,11 @@ export async function GET(
 // PUT /api/posts/[id] - Update a post
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  props: { params: Promise<{ id: string }> }
 ) {
+  const params = await props.params;
   try {
-    const user = await getAuthUser(request);
+    const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -48,33 +70,28 @@ export async function PUT(
       );
     }
 
-    const { id } = await params;
+    const { id } = params;
     const body = await request.json();
 
-    const supabase = getSupabaseServer();
-
     // Check if post exists and user owns it
-    const { data: existingPost, error: fetchError } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const existingPost = await prisma.post.findUnique({
+      where: { id },
+    });
 
-    if (fetchError || !existingPost) {
+    if (!existingPost) {
       return NextResponse.json(
         { success: false, error: 'Post not found' },
         { status: 404 }
       );
     }
 
-    if (existingPost.author_id !== user.id) {
+    if (existingPost.authorId !== user.id) {
       return NextResponse.json(
         { success: false, error: 'Forbidden: You can only edit your own posts' },
         { status: 403 }
       );
     }
 
-    // Validate input
     const validation = validatePost(body);
     if (!validation.valid) {
       return NextResponse.json(
@@ -83,29 +100,59 @@ export async function PUT(
       );
     }
 
-    const { data, error } = await supabase
-      .from('posts')
-      .update({
-        title: body.title || existingPost.title,
-        content: body.content || existingPost.content,
-        excerpt: body.excerpt !== undefined ? body.excerpt : existingPost.excerpt,
-        featured_image: body.featured_image !== undefined ? body.featured_image : existingPost.featured_image,
-        tags: body.tags || existingPost.tags,
-        status: body.status || existingPost.status,
-        updated_at: new Date().toISOString(),
-        published_at: body.status === 'published' && !existingPost.published_at 
-          ? new Date().toISOString() 
-          : existingPost.published_at,
-      })
-      .eq('id', id)
-      .select()
-      .single();
+    const { title, content, excerpt, coverImage, tags, status } = validation.data!;
 
-    if (error) throw error;
+    // Update tags if provided
+    let postTagUpdate = undefined;
+    if (tags) {
+        // First delete existing connections
+        await prisma.postTag.deleteMany({
+            where: { postId: id }
+        });
+        
+        // Then create new ones
+        postTagUpdate = {
+            create: tags.map((tagName) => {
+                const tagSlug = tagName.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+                return {
+                    Tag: {
+                        connectOrCreate: {
+                            where: { slug: tagSlug },
+                            create: { name: tagName, slug: tagSlug }
+                        }
+                    }
+                };
+            })
+        };
+    }
 
-    return NextResponse.json({ success: true, data: formatPost(data) });
+    const updatedPost = await prisma.post.update({
+      where: { id },
+      data: {
+        title,
+        content,
+        excerpt,
+        coverImage,
+        status: (status as PostStatus),
+        updatedAt: new Date(),
+        publishedAt: status === 'PUBLISHED' && !existingPost.publishedAt 
+          ? new Date() 
+          : existingPost.publishedAt,
+        PostTag: postTagUpdate
+      },
+      include: {
+        author: true,
+        PostTag: {
+            include: {
+                Tag: true
+            }
+        }
+      },
+    });
+
+    return NextResponse.json({ success: true, data: formatPost(updatedPost) });
   } catch (error: any) {
-    console.error('[v0] PUT /api/posts/[id] error:', error);
+    console.error('[API] PUT /api/posts/[id] error:', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to update post' },
       { status: 500 }
@@ -116,10 +163,11 @@ export async function PUT(
 // DELETE /api/posts/[id] - Delete a post
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  props: { params: Promise<{ id: string }> }
 ) {
+  const params = await props.params;
   try {
-    const user = await getAuthUser(request);
+    const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -127,40 +175,33 @@ export async function DELETE(
       );
     }
 
-    const { id } = await params;
-    const supabase = getSupabaseServer();
+    const { id } = params;
 
-    // Check if post exists and user owns it
-    const { data: existingPost, error: fetchError } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const existingPost = await prisma.post.findUnique({
+      where: { id },
+    });
 
-    if (fetchError || !existingPost) {
+    if (!existingPost) {
       return NextResponse.json(
         { success: false, error: 'Post not found' },
         { status: 404 }
       );
     }
 
-    if (existingPost.author_id !== user.id) {
+    if (existingPost.authorId !== user.id) {
       return NextResponse.json(
         { success: false, error: 'Forbidden: You can only delete your own posts' },
         { status: 403 }
       );
     }
 
-    const { error } = await supabase
-      .from('posts')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
+    await prisma.post.delete({
+      where: { id },
+    });
 
     return NextResponse.json({ success: true, message: 'Post deleted successfully' });
   } catch (error: any) {
-    console.error('[v0] DELETE /api/posts/[id] error:', error);
+    console.error('[API] DELETE /api/posts/[id] error:', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to delete post' },
       { status: 500 }
