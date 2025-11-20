@@ -2,10 +2,29 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import ExplorePostCard from '@/components/ExplorePostCard';
 import { Post } from '@/types/post';
 
 function ExploreContent() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (!session) {
+      router.push('/login');
+    }
+  }, [session, status, router]);
+
+  if (status === 'loading') {
+    return <div className="text-center py-8">Loading...</div>;
+  }
+
+  if (!session) {
+    return null;
+  }
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
