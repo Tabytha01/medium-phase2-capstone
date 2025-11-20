@@ -1,10 +1,25 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 function ProfileContent() {
   const { data: session } = useSession();
+  const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
+
+  useEffect(() => {
+    // Get posts count from localStorage
+    const postCount = parseInt(localStorage.getItem('postCount') || '0');
+    setStats(prev => ({ ...prev, posts: postCount }));
+  }, []);
+
+  const handleFollow = () => {
+    setStats(prev => ({ 
+      ...prev, 
+      following: prev.following + 1 
+    }));
+  };
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -27,22 +42,22 @@ function ProfileContent() {
 
           <h2 className="text-2xl font-semibold mb-4">My Posts</h2>
           <div className="text-gray-600 dark:text-gray-400">
-            <p>No posts yet. Start writing to share your thoughts!</p>
+            <p>{stats.posts > 0 ? `You have ${stats.posts} published posts.` : 'No posts yet. Start writing to share your thoughts!'}</p>
           </div>
         </div>
       </div>
 
       <div className="mt-8 grid md:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 text-center">
-          <p className="text-3xl font-bold mb-2">0</p>
+          <p className="text-3xl font-bold mb-2">{stats.posts}</p>
           <p className="text-gray-600 dark:text-gray-400">Posts</p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 text-center">
-          <p className="text-3xl font-bold mb-2">0</p>
+          <p className="text-3xl font-bold mb-2">{stats.followers}</p>
           <p className="text-gray-600 dark:text-gray-400">Followers</p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 text-center">
-          <p className="text-3xl font-bold mb-2">0</p>
+          <p className="text-3xl font-bold mb-2">{stats.following}</p>
           <p className="text-gray-600 dark:text-gray-400">Following</p>
         </div>
       </div>

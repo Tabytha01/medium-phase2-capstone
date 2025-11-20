@@ -93,7 +93,9 @@ export async function GET(request: NextRequest) {
 // POST /api/posts - Create a new post
 export async function POST(request: NextRequest) {
   try {
+    console.log('POST /api/posts called');
     const user = await getCurrentUser();
+    console.log('Current user:', user);
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },

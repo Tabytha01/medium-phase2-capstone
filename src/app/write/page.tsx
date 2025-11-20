@@ -19,9 +19,21 @@ function WriteContent() {
   const [showPreview, setShowPreview] = useState(false);
 
   const createPostMutation = useMutation({
-    mutationFn: (data: CreatePostInput) => postsApi.create(data),
+    mutationFn: async (data: CreatePostInput) => {
+      const response = await axios.post('/api/posts', data);
+      return response.data;
+    },
     onSuccess: () => {
+      // Increment post count in localStorage
+      const currentCount = parseInt(localStorage.getItem('postCount') || '0');
+      localStorage.setItem('postCount', (currentCount + 1).toString());
+      
+      alert('Post published successfully!');
       router.push("/profile");
+    },
+    onError: (error: any) => {
+      console.error('Error creating post:', error);
+      alert(error.response?.data?.error || 'Failed to publish post');
     },
   });
 
@@ -29,8 +41,11 @@ function WriteContent() {
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const base64 = await convertToBase64(file);
-        setCoverImage(base64);
+        const reader = new FileReader();
+        reader.onload = () => {
+          setCoverImage(reader.result as string);
+        };
+        reader.readAsDataURL(file);
       } catch (error) {
         alert("Failed to upload image");
       }

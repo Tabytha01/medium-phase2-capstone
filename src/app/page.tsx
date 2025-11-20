@@ -35,8 +35,49 @@ async function getPosts() {
   return posts.map(formatPost);
 }
 
-export default async function Home() {
-  const posts = await getPosts();
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+import PostCard from '../components/PostCard';
+import { Post } from '@/types/post';
+
+export default function Home() {
+  const { data: session } = useSession();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [session]);
+
+  const fetchPosts = async () => {
+    try {
+      // Check if user is following anyone
+      const followingList = JSON.parse(localStorage.getItem('following') || '[]');
+      
+      if (!session || followingList.length === 0) {
+        // Show sample posts or empty state
+        setPosts([]);
+      } else {
+        // In a real app, filter posts by followed users
+        const response = await fetch('/api/posts?status=PUBLISHED');
+        const data = await response.json();
+        if (data.success) {
+          setPosts(data.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center py-8">Loading...</div>;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -44,19 +85,25 @@ export default async function Home() {
         <div className="lg:col-span-2 space-y-8">
             <section>
                 <div className="flex justify-between items-center border-b pb-4 mb-6">
-                    <h2 className="text-xl font-semibold">Latest Stories</h2>
+                    <h2 className="text-xl font-semibold">Your Feed</h2>
                 </div>
                 
                 <div className="flex flex-col">
-                    {posts.length > 0 ? (
+                    {!session ? (
+                        <div className="py-12 text-center text-gray-500">
+                            <Link href="/login" className="text-green-600 hover:underline">
+                                Sign in
+                            </Link> to see your personalized feed.
+                        </div>
+                    ) : posts.length > 0 ? (
                         posts.map(post => (
                             <PostCard key={post.id} post={post} />
                         ))
                     ) : (
                         <div className="py-12 text-center text-gray-500">
-                            No stories published yet. 
-                            <Link href="/write" className="text-green-600 hover:underline ml-1">
-                                Write the first one!
+                            No stories from people you follow yet. 
+                            <Link href="/explore" className="text-green-600 hover:underline ml-1">
+                                Discover writers to follow!
                             </Link>
                         </div>
                     )}
