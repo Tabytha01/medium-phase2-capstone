@@ -4,7 +4,7 @@ A full-featured publishing platform inspired by Medium, built with Next.js, Reac
 
 ## Features Implemented (Labs 1-3)
 
-### ✅ Lab 1: Project Setup & Routing
+### Lab 1: Project Setup & Routing
 - Next.js 16 with App Router and TypeScript
 - Clean folder structure with organized components
 - Responsive layout with Header and Footer
@@ -12,7 +12,7 @@ A full-featured publishing platform inspired by Medium, built with Next.js, Reac
 - Tailwind CSS for styling
 - ESLint and Prettier configured
 
-### ✅ Lab 2: Authentication & User Profiles
+### Lab 2: Authentication & User Profiles
 - NextAuth.js integration with credentials provider
 - Signup and login pages with form validation (React Hook Form + Zod)
 - Protected routes with client-side guards
@@ -20,7 +20,7 @@ A full-featured publishing platform inspired by Medium, built with Next.js, Reac
 - Session management with JWT
 - Dynamic header showing auth state
 
-### ✅ Lab 3: Editor & Rich Content
+### Lab 3: Editor & Rich Content
 - Jodit rich text editor integration
 - Support for bold, italic, headings, lists, links, images
 - Image upload with base64 conversion (Cloudinary-ready)
