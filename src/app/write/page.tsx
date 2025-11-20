@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Editor from "@/components/Editor";
 import { CreatePostInput } from "@/types/post";
@@ -10,6 +11,7 @@ import axios from "axios";
 
 function WriteContent() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [excerpt, setExcerpt] = useState("");
@@ -24,12 +26,13 @@ function WriteContent() {
       return response.data;
     },
     onSuccess: () => {
-      // Clear and recalculate post count
-      localStorage.removeItem('postCount');
-      const posts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-      posts.push({ id: Date.now(), title, createdAt: new Date().toISOString() });
-      localStorage.setItem('userPosts', JSON.stringify(posts));
-      localStorage.setItem('postCount', posts.length.toString());
+      // User-specific post count
+      const userId = session?.user?.id;
+      if (userId) {
+        const userKey = `postCount_${userId}`;
+        const count = parseInt(localStorage.getItem(userKey) || '0') + 1;
+        localStorage.setItem(userKey, count.toString());
+      }
       
       alert('Post published successfully!');
       router.push("/profile");

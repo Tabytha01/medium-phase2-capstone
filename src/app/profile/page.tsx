@@ -10,32 +10,25 @@ function ProfileContent() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    const updatePostCount = () => {
-      const posts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-      const postCount = posts.length;
-      localStorage.setItem('postCount', postCount.toString());
+    if (session?.user?.id) {
+      const userKey = `postCount_${session.user.id}`;
+      const postCount = parseInt(localStorage.getItem(userKey) || '0');
       setStats(prev => ({ ...prev, posts: postCount }));
-    };
-    
-    updatePostCount();
-    
-    // Listen for storage changes
-    window.addEventListener('storage', updatePostCount);
-    
-    // Also check when component becomes visible
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        updatePostCount();
+    }
+  }, [session]);
+
+  // Force refresh when component mounts
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (session?.user?.id) {
+        const userKey = `postCount_${session.user.id}`;
+        const postCount = parseInt(localStorage.getItem(userKey) || '0');
+        setStats(prev => ({ ...prev, posts: postCount }));
       }
-    };
+    }, 1000);
     
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      window.removeEventListener('storage', updatePostCount);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [refreshKey]);
+    return () => clearInterval(interval);
+  }, [session]);
 
   const handleFollow = () => {
     setStats(prev => ({ 
