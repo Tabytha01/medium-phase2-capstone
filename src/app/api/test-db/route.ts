@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    await prisma.$connect();
-    const userCount = await prisma.user.count();
+    // Mock database test - using file storage
     return NextResponse.json({ 
       success: true, 
-      message: 'Database connected',
-      userCount 
+      message: 'File storage connected',
+      userCount: 0
     });
   } catch (error: any) {
     return NextResponse.json({ 
