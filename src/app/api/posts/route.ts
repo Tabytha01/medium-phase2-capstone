@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     if (tag) {
       const tagLower = tag.toLowerCase();
       filteredPosts = filteredPosts.filter(post => 
-        post.tags?.some(t => 
+        post.tags?.some((t: any) => 
           t.name.toLowerCase().includes(tagLower) ||
           t.slug.toLowerCase().includes(tagLower)
         )
