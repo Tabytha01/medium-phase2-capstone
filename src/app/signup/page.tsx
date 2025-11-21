@@ -75,7 +75,7 @@ export default function SignupPage() {
             {...register("email")}
             type="email"
             id="email"
-            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-[#4A7FA7] dark:bg-gray-800 dark:border-gray-700"
+            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring- xxxxcvb dark:bg-gray-800 dark:border-gray-700"
             placeholder="you@example.com"
           />
           {errors.email && (
