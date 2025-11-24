@@ -1,0 +1,26 @@
+[
+  {
+    "id": "comment_1763712277550",
+    "content": "nice story",
+    "postId": "post_1763711836694",
+    "parentId": null,
+    "createdAt": "2025-11-21T08:04:37.550Z",
+    "author": {
+      "id": "user_tabitha_gmail_com",
+      "name": "tabitha",
+      "avatarUrl": null
+    }
+  },
+  {
+    "id": "comment_1763712432420",
+    "content": "nice\n",
+    "postId": "post_1763671322729",
+    "parentId": null,
+    "createdAt": "2025-11-21T08:07:12.420Z",
+    "author": {
+      "id": "user_tabitha_gmail_com",
+      "name": "tabitha",
+      "avatarUrl": null
+    }
+  }
+]

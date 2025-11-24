@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { useState } from "react";
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isActive = (path: string) => pathname === path;
 
@@ -75,13 +77,52 @@ export default function Header() {
             )}
           </div>
           
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <Link href="/write" className="text-sm px-3 py-1 bg-white/20 rounded">
-              Write
-            </Link>
-          </div>
+          {/* Mobile Hamburger */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden p-2"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+            </svg>
+          </button>
         </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden mt-4 pb-4 border-t border-white/20">
+            <div className="flex flex-col space-y-3 pt-4">
+              <Link href="/" className={`hover:text-gray-300 ${isActive("/") ? "font-semibold" : ""}`} onClick={() => setIsMenuOpen(false)}>
+                Home
+              </Link>
+              <Link href="/explore" className={`hover:text-gray-300 ${isActive("/explore") ? "font-semibold" : ""}`} onClick={() => setIsMenuOpen(false)}>
+                Explore
+              </Link>
+              {status === "authenticated" ? (
+                <>
+                  <Link href="/write" className={`hover:text-gray-300 ${isActive("/write") ? "font-semibold" : ""}`} onClick={() => setIsMenuOpen(false)}>
+                    Write
+                  </Link>
+                  <Link href="/profile" className={`hover:text-gray-300 ${isActive("/profile") ? "font-semibold" : ""}`} onClick={() => setIsMenuOpen(false)}>
+                    Profile
+                  </Link>
+                  <button onClick={() => { handleSignOut(); setIsMenuOpen(false); }} className="text-left hover:text-gray-300">
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link href="/login" className="hover:text-gray-300" onClick={() => setIsMenuOpen(false)}>
+                    Sign In
+                  </Link>
+                  <Link href="/signup" className="hover:text-gray-300" onClick={() => setIsMenuOpen(false)}>
+                    Get Started
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
     </header>
   );
